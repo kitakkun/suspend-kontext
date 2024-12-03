@@ -1,5 +1,5 @@
 package com.kitakkun.suspendkontext.gradle
 
 open class SuspendKontextExtension {
-    var enabled: Boolean = false
+    var enabled: Boolean = true
 }
