@@ -8,20 +8,26 @@ import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irCallConstructor
 import org.jetbrains.kotlin.ir.builders.irExprBody
 import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrSyntheticBody
 import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
+import org.jetbrains.kotlin.ir.types.classOrFail
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.typeWith
+import org.jetbrains.kotlin.ir.util.classId
 import org.jetbrains.kotlin.ir.util.getPropertyGetter
 import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.isObject
+import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.SpecialNames
 
@@ -29,24 +35,44 @@ class CoroutineContextTransformer(
     private val irContext: SuspendKontextIrContext,
 ) : IrElementTransformerVoid() {
     override fun visitFunction(declaration: IrFunction): IrStatement {
-        val dispatcherName = when {
-            declaration.hasAnnotation(SuspendKontextConsts.ioContextAnnotationClassId) -> "IO"
-            declaration.hasAnnotation(SuspendKontextConsts.defaultContextAnnotationClassId) -> "Default"
-            declaration.hasAnnotation(SuspendKontextConsts.unconfinedContextAnnotationClassId) -> "Unconfined"
-            declaration.hasAnnotation(SuspendKontextConsts.mainContextAnnotationClassId) -> "Main"
-            else -> return super.visitDeclaration(declaration)
-        }
-
-        val body = declaration.body
         val irBuilder = irContext.irBuiltIns.createIrBuilder(declaration.symbol)
 
-        val functionReturnType = declaration.returnType
+        val customContextImplClass = declaration.annotations
+            .firstNotNullOfOrNull {
+                val annotationClass = it.type.classOrFail.owner
+                val customContextAnnotationConstructorCall = annotationClass.annotations.find { it.type.classOrFail.owner.classId == SuspendKontextConsts.customContextAnnotationClassId }
+                val classReference = customContextAnnotationConstructorCall?.getValueArgument(0) as? IrClassReference
+                classReference?.classType?.classOrFail?.owner
+            }
 
-        val getDispatcherCall = with(irBuilder) {
-            irCall(irContext.dispatchers.owner.getPropertyGetter(dispatcherName)!!).apply {
-                dispatchReceiver = irGetObject(irContext.dispatchers)
+        val getDispatcherCall = when {
+            customContextImplClass != null -> {
+                with(irBuilder) {
+                    if (customContextImplClass.isObject) irGetObject(customContextImplClass.symbol)
+                    else irCallConstructor(callee = customContextImplClass.primaryConstructor!!.symbol, typeArguments = emptyList())
+                }
+            }
+
+            else -> {
+                val dispatcherName = when {
+                    declaration.hasAnnotation(SuspendKontextConsts.ioContextAnnotationClassId) -> "IO"
+                    declaration.hasAnnotation(SuspendKontextConsts.defaultContextAnnotationClassId) -> "Default"
+                    declaration.hasAnnotation(SuspendKontextConsts.unconfinedContextAnnotationClassId) -> "Unconfined"
+                    declaration.hasAnnotation(SuspendKontextConsts.mainContextAnnotationClassId) -> "Main"
+                    else -> return super.visitFunction(declaration)
+                }
+
+                with(irBuilder) {
+                    irCall(irContext.dispatchers.owner.getPropertyGetter(dispatcherName)!!).apply {
+                        dispatchReceiver = irGetObject(irContext.dispatchers)
+                    }
+                }
             }
         }
+
+
+        val body = declaration.body
+        val functionReturnType = declaration.returnType
 
         val withContextBlockFunction = irContext.irFactory.createSimpleFunction(
             startOffset = declaration.startOffset,

@@ -1,5 +1,8 @@
 package com.kitakkun.suspendkontext.core.annotation
 
+import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
+
 /**
  * Indicates that a function is a candidate for compiler modification via meta-annotation logic.
  */
@@ -59,3 +62,28 @@ annotation class DefaultContext
 @Target(AnnotationTarget.FUNCTION)
 @SuspendKontext
 annotation class UnconfinedContext
+
+/**
+ * Enables the creation of custom coroutine context annotations by specifying an implementation class.
+ *
+ * The `dispatcher` must:
+ * - Be a subclass of [CoroutineDispatcher].
+ * - Be an `object` or a `class` with an empty (no-argument) constructor.
+ *
+ * Example:
+ * ```kotlin
+ * object MyCustomDispatcher : CoroutineDispatcher() { ... }
+ *
+ * @CustomContext(MyCustomDispatcher::class)
+ * @Target(AnnotationTarget.FUNCTION)
+ * annotation class MyContext
+ *
+ * @MyContext
+ * suspend fun performTask() {
+ *     // Executes in MyCustomDispatcher
+ * }
+ * ```
+ */
+@Target(AnnotationTarget.ANNOTATION_CLASS)
+@SuspendKontext
+annotation class CustomContext(val dispatcher: KClass<*>)
