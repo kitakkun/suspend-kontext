@@ -7,4 +7,5 @@ object SuspendKontextConsts {
     val defaultContextAnnotationClassId = classId("com.kitakkun.suspendkontext.core.annotation", "DefaultContext")
     val mainContextAnnotationClassId = classId("com.kitakkun.suspendkontext.core.annotation", "MainContext")
     val unconfinedContextAnnotationClassId = classId("com.kitakkun.suspendkontext.core.annotation", "UnconfinedContext")
+    val customContextAnnotationClassId = classId("com.kitakkun.suspendkontext.core.annotation", "CustomContext")
 }
