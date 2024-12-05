@@ -13,5 +13,9 @@ object SuspendKontextErrorMessages : BaseDiagnosticRendererFactory() {
             factory = SuspendKontextErrors.NON_DISPATCHER_CLASS,
             message = "the dispatcher for CustomContext must be a super class of kotlinx.coroutines.CoroutineDispatcher.",
         )
+        put(
+            factory = SuspendKontextErrors.MULTIPLE_CONTEXT_APPLICATION,
+            message = "Multiple suspend-kontext annotations cannot be applied to the same function. Please ensure only one context annotation is used.",
+        )
     }
 }

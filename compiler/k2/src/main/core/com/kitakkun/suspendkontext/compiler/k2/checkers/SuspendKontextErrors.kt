@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.diagnostics.rendering.RootDiagnosticRendererFactory
 object SuspendKontextErrors {
     val NON_SUSPEND_FUNCTION by error0<PsiElement>()
     val NON_DISPATCHER_CLASS by error0<PsiElement>()
+    val MULTIPLE_CONTEXT_APPLICATION by error0<PsiElement>()
 
     init {
         RootDiagnosticRendererFactory.registerFactory(SuspendKontextErrorMessages)
