@@ -1,6 +1,7 @@
 package com.kitakkun.suspendkontext.test
 
 import com.kitakkun.suspendkontext.core.annotation.CustomContext
+import com.kitakkun.suspendkontext.core.annotation.ExperimentalSuspendKontextApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
@@ -12,9 +13,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
+@OptIn(ExperimentalSuspendKontextApi::class)
 @CustomContext(dispatcher = SingletonDelegatedDispatcher::class)
 annotation class SingletonContext
 
+@OptIn(ExperimentalSuspendKontextApi::class)
 @CustomContext(dispatcher = MyDispatcher::class)
 annotation class MyContext
 

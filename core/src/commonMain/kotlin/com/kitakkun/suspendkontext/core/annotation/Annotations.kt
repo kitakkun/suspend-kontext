@@ -84,6 +84,7 @@ annotation class UnconfinedContext
  * }
  * ```
  */
+@ExperimentalSuspendKontextApi
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 @SuspendKontext
 annotation class CustomContext(val dispatcher: KClass<*>)
