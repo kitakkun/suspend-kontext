@@ -1,6 +1,7 @@
 package com.kitakkun.suspendkontext.compiler.k2.checkers
 
 import com.kitakkun.suspendkontext.compiler.k2.SuspendKontextFirConsts
+import com.kitakkun.suspendkontext.compiler.k2.api.VersionSpecificApi
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind
@@ -10,7 +11,6 @@ import org.jetbrains.kotlin.fir.declarations.getKClassArgument
 import org.jetbrains.kotlin.fir.declarations.toAnnotationClassId
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.resolve.defaultType
-import org.jetbrains.kotlin.fir.resolve.providers.getRegularClassSymbolByClassId
 import org.jetbrains.kotlin.fir.types.isSubtypeOf
 import org.jetbrains.kotlin.fir.types.typeContext
 import org.jetbrains.kotlin.name.Name
@@ -22,7 +22,7 @@ object CustomContextDefinitionChecker : FirAnnotationCallChecker(MppCheckerKind.
         if (annotationClassId != SuspendKontextFirConsts.CustomContextAnnotationClassId) return
 
         val klass = expression.getKClassArgument(Name.identifier("dispatcher"), context.session) ?: return
-        val coroutineDispatcherClass = context.session.getRegularClassSymbolByClassId(SuspendKontextFirConsts.CoroutineDispatcherClassId) ?: return
+        val coroutineDispatcherClass = VersionSpecificApi.INSTANCE.getRegularClassSymbolByClassId(SuspendKontextFirConsts.CoroutineDispatcherClassId, context.session) ?: return
 
         if (!klass.isSubtypeOf(context = context.session.typeContext, type = coroutineDispatcherClass.defaultType())) {
             reporter.reportOn(
